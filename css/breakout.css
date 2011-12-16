@@ -1,0 +1,14 @@
+#breakout {
+  margin: auto;
+  margin-top: 10px;
+  width: 500px;
+  height: 600px;
+  background-color: blue;
+}
+
+.cell {
+  float: left;
+  background-color: red;
+  width: 60px;
+  height: 20px;
+}
