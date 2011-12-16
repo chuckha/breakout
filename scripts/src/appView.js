@@ -7,8 +7,8 @@ $(function(){
      // parse it and create views and cells
     },
 
-    addOne: function(cellView) {
-      $(this.el).append(cellView.render().el);
+    addObject: function(view) {
+      $(this.el).append(view.render().el);
     }
   });
 });

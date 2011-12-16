@@ -1,14 +1,13 @@
 $(function(){
   window.CellView = Backbone.View.extend({
+    // Each cell is represented by a div.
     tagName: "div",
 
     className: "cell",
 
-    template: _.template($('#cell-template').html()),
-    
     render: function () {
-     $(this.el).html(this.template(this.model.toJSON()));
-     return this; 
+      $(this.el).addClass('class-' + this.model.get('health'));
+      return this; 
     }
   });
 });

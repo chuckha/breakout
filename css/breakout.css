@@ -1,14 +1,28 @@
 #breakout {
-  margin: auto;
+  margin: 0 auto;
   margin-top: 10px;
-  width: 500px;
+  width: 520px;
   height: 600px;
   background-color: blue;
+  position: relative;
 }
 
 .cell {
   float: left;
-  background-color: red;
-  width: 60px;
+  width: 50px;
   height: 20px;
+  border-style: solid;
+  border-width: 1px;
+}
+
+.class-1 {
+  background-color: red;
+}
+
+#paddle {
+  position: absolute;
+  bottom: 10px;
+  width: 30px;
+  height: 10px;
+  background-color: white;
 }

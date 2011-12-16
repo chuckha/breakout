@@ -8,7 +8,8 @@
     <script type="text/javascript" src="scripts/lib/backbone.js"></script>
     <script type="text/javascript" src="scripts/src/cell.js"></script>
     <script type="text/javascript" src="scripts/src/cellView.js"></script>
-
+    <script type="text/javascript" src="scripts/src/paddle.js"></script>
+    <script type="text/javascript" src="scripts/src/paddleView.js"></script>
     <script type="text/javascript" src="scripts/src/appView.js"></script>
     <script type="text/javascript">
       $(function () {
@@ -16,15 +17,15 @@
           for(var i=0; i< 10; i++){
             var c = new Cell;
             var cv = new CellView({model: c});
-            window.App.addOne(cv);
+            window.App.addObject(cv);
           }
+          var p = new Paddle;
+          var pv = new PaddleView({model: p});
+          window.App.addObject(pv);
       });
     </script>
   </head>
   <body>
     <div id="breakout"></div>
-    <script type="text/template" id="cell-template">
-      <span data-health="<%= health %>"></span>
-    </script>
   </body>
 </html>
