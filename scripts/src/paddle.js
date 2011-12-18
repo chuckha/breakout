@@ -1,7 +1,7 @@
 $(function(){
   window.Paddle = Backbone.Model.extend({
     defaults: {
-      width: 50,
+      width: BREAKOUT_WIDTH/8,
       left: 0,
       bottom: 10
     },
@@ -16,7 +16,7 @@ $(function(){
   
     moveRight: function () {
       var x = this.get('left');
-      if (x < 520) {
+      if (x + this.get('width') < BREAKOUT_WIDTH) {
         x = x + 10;
       }
       this.set({'left': x});
