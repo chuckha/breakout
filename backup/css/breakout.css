@@ -1,0 +1,35 @@
+#breakout {
+  margin: 0 auto;
+  margin-top: 10px;
+  background-color: blue;
+  position: relative;
+}
+
+.cell {
+  float: left;
+  width: 50px;
+  height: 20px;
+  border-style: solid;
+  border-width: 1px;
+}
+
+.class-1 {
+  background-color: red;
+}
+
+#paddle {
+  position: absolute;
+  width: 30px;
+  height: 10px;
+  background-color: white;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+#ball {
+  position: absolute;
+  background-color: white;
+  width: 10px;
+  height: 10px;
+}
