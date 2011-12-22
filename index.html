@@ -1,11 +1,51 @@
 <html>
   <head>
-    <script type="text/javascript" src="scripts/lib/vector.js"></script>
+    <script type="text/javascript" src="scripts/lib/utils.js"></script>
+    <script type="text/javascript" src="scripts/src/entities.js"></script>
+    <script type="text/javascript" src="scripts/src/components.js"></script>
+    <script type="text/javascript" src="scripts/src/paddle.js"></script>
     <style type="text/css">
       #game {
         border-style: solid;
       }
     </style>
+    <script type="text/javascript">
+      window.onload = function () {
+        var HEIGHT = 400;
+        var WIDTH = 500;
+        var canvas = document.getElementById('game');  
+        canvas.setAttribute('height', HEIGHT);
+        canvas.setAttribute('width', WIDTH);
+        var ctx = canvas.getContext('2d');  
+
+        var point = new Point(0, HEIGHT - 40 - 10);
+        var speed = new Speed();
+
+        var paddle_options = { 
+          components: [
+              PaddleInput,
+              PaddlePhysics,
+              PaddleGraphic
+          ],
+          ctx: ctx,
+          MAX_WIDTH: WIDTH,
+          MAX_HEIGHT: HEIGHT,
+          color: "rbg(255,255,255)",
+          position: point,
+          speed: speed,
+          width: 40,
+          height: 10
+        };
+        var paddle = new Paddle(paddle_options);
+        console.log(paddle);
+        paddle.setListeners();
+
+        id = window.setInterval(function () {
+          ctx.clearRect(0, 0, WIDTH, HEIGHT);
+          paddle.run();
+        }, 17);
+      };
+    </script>
   </head>
   <body>
     <canvas id="game"></canvas>
