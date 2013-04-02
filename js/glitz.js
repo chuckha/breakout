@@ -336,7 +336,7 @@
         animation.renderable = renderable
 
         // let the engine know we're starting an animation
-        hasOwn.call( animation.renderable, 'engine' ) ? animation.renderable.engine.registerAnimation() : 0
+        animation.renderable.engine ? animation.renderable.engine.registerAnimation() : 0
 
         animation.from = {}
         tkvDeepCopy( animation.from, animation.to, renderable )
@@ -585,7 +585,7 @@
       removeChild: function( removingChild ){
         Array.prototype.splice.call( this, removingChild._id, 1)
         each(this,function( child ){ 
-          if(child._id > removingChild._id) child._id++
+          if(child._id > removingChild._id) child._id--
         })
       },
       
@@ -900,10 +900,14 @@
           height: engine.canvas.height,
           backgroundColor: '#fff',
           clearFrames: true,
+          onLoop: function(){
+            // ...
+          },
           background: function( ctx ){
-
+            // ...
           },
           setup: function( ctx ){
+            this.onLoop();
             ctx.fillStyle = this.backgroundColor
             if(this.clearFrames)
               ctx.fillRect( -1, -1, this.width + 1, this.height + 1 ); // setup
@@ -984,6 +988,11 @@
       stop: function(){
         clearInterval( this.running )
         this.running = false
+      },
+
+      loop: function( onframe ){
+        this.layout.onLoop = onframe
+        this.registerAnimation()
       },
       
       /**
