@@ -1,4 +1,7 @@
 (function() {
+  // Sound setup
+  var sound = new Audio(["sounds/boop.wav"]);
+
   // Engine setup
   var engine = window.engine = new glitz.Engine(document.getElementById('canvas'));
   engine.setSize($(window).width(), $(window).height()-5);
@@ -168,35 +171,43 @@
     // brick collision
     // For each brick
     //  See if the top of the ball has collided
+    var collision = false;
     for (i = 0; i < bricks.length; i ++) {
       brick = bricks[i];
       if (point_rect_collision(topx, topy, brick)) {
-        brick.remove();
-        bricks.splice(i, 1);
+        collision = true;
         ball.dy *= -1;
         break;
       }
       //  See if the bottom of the ball has colided
       if (point_rect_collision(bottomx, bottomy, brick)) {
-        brick.remove();
-        bricks.splice(i, 1);
+        collision = true;
         ball.dy *= -1;
         break;
       }
       //  See if the left of the ball has collided
       if (point_rect_collision(leftx, lefty, brick)) {
-        brick.remove();
-        bricks.splice(i, 1);
+        collision = true;
         ball.dx *= -1;
         break;
       }
       //  See if the right of the ball has collided
       if (point_rect_collision(rightx, righty, brick)) {
-        brick.remove();
-        bricks.splice(i, 1);
+        collision = true;
         ball.dx *= -1;
         break;
       }
+    }
+    if (collision) {
+      if (sound.ended) {
+        sound.play();
+      // If the sound has not ended, seek to the start of the audio and play it
+      } else {
+        sound.currentTime = 0;
+        sound.play();
+      }
+      brick.remove();
+      bricks.splice(i, 1);
     }
 
     // After the collision has or hasn't taken place
