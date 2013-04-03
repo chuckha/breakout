@@ -1,6 +1,24 @@
 (function() {
   // Sound setup
-  var sound = new Audio(["sounds/boop.wav"]);
+  var sounds = {
+    brick: new Audio(["sounds/brick_hit.wav"]),
+    paddle: new Audio(["sounds/paddle_hit.wav"])
+  }
+
+  var mute = true;
+
+  // Play a sound even if the sound is already playing
+  function playSound(sound) {
+    if (!mute) {
+      if (sound.ended) {
+        sound.play();
+      // If the sound has not ended, seek to the start of the audio and play it
+      } else {
+        sound.currentTime = 0;
+        sound.play();
+      }
+    }
+  }
 
   // Engine setup
   var engine = window.engine = new glitz.Engine(document.getElementById('canvas'));
@@ -9,7 +27,7 @@
 
   // Models
   var Game = new glitz.Renderable({
-    width: 365,
+    width: 500,
     height: 500,
     render: function(ctx) {
       ctx.closePath();
@@ -21,8 +39,19 @@
 
   var BPROPS = {
     height: 15,
-    width: 40,
+    width: 50,
   };
+
+  var Label = new glitz.Renderable({
+    label: "",
+    data: "",
+    render: function(ctx) {
+      ctx.closePath();
+      ctx.font = "12px eightbit";
+      ctx.fillStyle = "#111";
+      ctx.fillText(this.label + this.data, 0, 0);
+    }
+  });
 
   var Brick = new glitz.Renderable({
     height: BPROPS.height,
@@ -32,6 +61,9 @@
       ctx.beginPath();
       ctx.fillStyle = "#F00";
       ctx.fillRect(0,0, this.width, this.height);
+    },
+    sound: function () {
+      playSound(sounds['brick']);
     }
   });
 
@@ -58,6 +90,9 @@
       ctx.beginPath();
       ctx.fillStyle = "#444";
       ctx.fillRect(0,0, this.width, this.height);
+    },
+    sound: function () {
+      playSound(sounds['paddle']);
     }
   });
 
@@ -69,17 +104,21 @@
   // FIXME: make a JSON object that can represent the layout of bricks for more than one level.
   for (j = 0; j < 8; j++) {
     for (i = 0; i < 6; i++) {
-      brick = new Brick({x:5 + (5 + BPROPS.width) * j, y:5 + (5 + BPROPS.height) * i});
+      brick = new Brick({x:43 + (1 + BPROPS.width) * j, y:40 + (1 + BPROPS.height) * i});
       bricks.push(brick)
       game.push(brick);
     }
   }
 
   var ball = new Ball({x:game.width/2, y:game.height - 40});
-  var paddle = new Paddle({x:0, y: game.height - 20})
+  var paddle = new Paddle({x:0, y: game.height - 20});
+  //var score = new Label({text: "score: ", x: 5, y: 15});
+  var lives = new Label({label: "lives: ", x: 5, y: 15, data: "3"})
 
   game.push(ball);
   game.push(paddle);
+  //game.push(score);
+  game.push(lives);
   engine.push(game);
 
   // Set the key listening functions
@@ -138,34 +177,38 @@
     var bottomx = ball.x;
     var bottomy = ball.y + ball.radius;
 
+    var paddle_collision = false
     // ball collides with paddle?
-    if (point_rect_collision(bottomx, bottomy, paddle))
-      ball.dy *= -1;
-    if (point_rect_collision(leftx, lefty, paddle))
-      ball.dx *= -1;
-    if (point_rect_collision(rightx, righty, paddle))
-      ball.dx *= -1;
+    if (point_rect_collision(bottomx, bottomy, paddle)) {
+      paddle_collision = true;
+      ball.dy = -ball.dy;
+    }
+    if (point_rect_collision(leftx, lefty, paddle) 
+        || point_rect_collision(rightx, righty, paddle)) {
+      paddle_collision = true;
+      ball.dx = -ball.dx;
+    }
+    if (paddle_collision) {
+      paddle.sound();
+    }
       
     // edge of game collision:
-    // left side of the game
-    if (ball.x - ball.radius <= 0) {
-      ball.dx = ball.dx * -1;
-    }
-
-    // right side of the game
-    if (ball.x + ball.radius >= ball.parent.width) {
-      ball.dx = ball.dx * -1;
+    // left || right side of the game turn the ball around
+    if (ball.x - ball.radius  + ball.dx < 0 
+        || ball.x + ball.radius + ball.dx > ball.parent.width) {
+      ball.dx = -ball.dx;
     }
 
     // top of the game
-    if (ball.y - ball.radius <= 0) {
-      ball.dy = ball.dy * -1;
+    if (ball.y - ball.radius + ball.dy <= 0) {
+      ball.dy = -ball.dy;
     }
 
     // bottom of the game
+    // FIXME: Special case, reduce lives here
     if (ball.y + ball.radius >= ball.parent.height) {
-      // FIXME: lives -= 1
-      ball.dy = ball.dy * -1;
+      lives.data -= 1;
+      ball.dy = -ball.dy;
     }
 
     // brick collision
@@ -174,38 +217,32 @@
     var collision = false;
     for (i = 0; i < bricks.length; i ++) {
       brick = bricks[i];
-      if (point_rect_collision(topx, topy, brick)) {
-        collision = true;
-        ball.dy *= -1;
-        break;
-      }
-      //  See if the bottom of the ball has colided
-      if (point_rect_collision(bottomx, bottomy, brick)) {
-        collision = true;
-        ball.dy *= -1;
-        break;
-      }
       //  See if the left of the ball has collided
       if (point_rect_collision(leftx, lefty, brick)) {
         collision = true;
-        ball.dx *= -1;
+        ball.dx = -ball.dx;
         break;
       }
       //  See if the right of the ball has collided
       if (point_rect_collision(rightx, righty, brick)) {
         collision = true;
-        ball.dx *= -1;
+        ball.dx = -ball.dx;
+        break;
+      }
+      if (point_rect_collision(topx, topy, brick)) {
+        collision = true;
+        ball.dy = -ball.dy;
+        break;
+      }
+      //  See if the bottom of the ball has colided
+      if (point_rect_collision(bottomx, bottomy, brick)) {
+        collision = true;
+        ball.dy = -ball.dy;
         break;
       }
     }
     if (collision) {
-      if (sound.ended) {
-        sound.play();
-      // If the sound has not ended, seek to the start of the audio and play it
-      } else {
-        sound.currentTime = 0;
-        sound.play();
-      }
+      brick.sound();
       brick.remove();
       bricks.splice(i, 1);
     }
