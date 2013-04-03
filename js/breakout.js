@@ -70,7 +70,7 @@
   var Ball = new glitz.Renderable({
     radius: 5,
     dx: 3,
-    dy: 3,
+    dy: -3,
     render: function (ctx) {
       ctx.closePath();
       ctx.beginPath();
@@ -80,11 +80,16 @@
     },
   });
 
+  var PPROPS = {
+    width: 80,
+    height: 10
+  };
+
   var Paddle = new glitz.Renderable({
     left: false,
     right: false,
-    width: 80,
-    height: 10,
+    width: PPROPS.width,
+    height: PPROPS.height,
     render: function (ctx) {
       ctx.closePath();
       ctx.beginPath();
@@ -111,7 +116,7 @@
   }
 
   var ball = new Ball({x:game.width/2, y:game.height - 40});
-  var paddle = new Paddle({x:0, y: game.height - 20});
+  var paddle = new Paddle({x:game.width/2 - PPROPS.width/2, y: game.height - 20});
   //var score = new Label({text: "score: ", x: 5, y: 15});
   var lives = new Label({label: "lives: ", x: 5, y: 15, data: "3"})
 
