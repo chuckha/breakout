@@ -80,12 +80,10 @@
     // l moves right
     if (e.which == 76) {
       paddleRight = true;
-      paddle.animate({x: '+8'}, {duration: 50});
     }
     // h moves left
     if (e.which == 72) {
       paddleLeft = true;
-      paddle.animate({x: '-8'}, {duration: 30});
     }
   }).keyup(function (e) {
     if (e.which == 76) {
@@ -112,7 +110,11 @@
       if (bottomy <= paddle.y + paddle.height) {
         if (bottomx <= paddle.x + paddle.width) {
           if (bottomx >= paddle.x) {
-            ball.dy *= -1;
+            var normalized_distance_from_center = ((paddle.x + paddle.width/2) - ball.x) / paddle.width/2;
+            var reflected_angle = (Math.PI / 4) + 4 * (normalized_distance_from_center);
+            var magnitude = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+            ball.dx = Math.cos(reflected_angle) * magnitude;
+            ball.dy = Math.sin(reflected_angle) * magnitude;
           }
         }
       }
@@ -213,10 +215,14 @@
     ball.x += ball.dx;
     ball.y += ball.dy;
     if (paddleLeft) {
-      paddle.x -= 1;
+      if (paddle.x > 0) {
+        paddle.x -= 5;
+      }
     }
     if (paddleRight) {
-      paddle.x += 1;
+      if (paddle.x + paddle.width < paddle.parent.width) {
+        paddle.x += 5;
+      }
     }
   });
 })();
