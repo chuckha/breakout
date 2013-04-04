@@ -1,4 +1,33 @@
 (function() {
+  var level0 = [
+    [0,0,0,0,0,0,1]
+  ];
+  var level1 = [
+    [1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1]
+  ];
+  var level2 = [
+    [1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,1],
+    [1,0,1,1,1,1,0,1],
+    [1,0,2,1,2,1,0,1],
+    [1,0,1,1,1,1,0,1],
+    [1,0,1,2,2,1,0,1],
+    [1,0,1,1,1,1,0,1],
+    [1,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1],
+    [0,0,1,1,1,1,0,0],
+    [0,1,1,1,1,1,1,0],
+    [1,1,0,1,0,1,0,1],
+    [1,0,1,0,1,0,1,1],
+    [1,1,1,1,1,1,1,1]
+  ];
+  var levels = [level0, level1, level2];
+  var currentLevel = 0;
   // Sound setup
   var sounds = {
     brick: new Audio(["sounds/brick_hit.wav"]),
@@ -67,7 +96,7 @@
     }
   });
 
-  var Brick = new glitz.Renderable({
+  var Brick1 = new glitz.Renderable({
     height: BPROPS.height,
     width: BPROPS.width,
     render: function(ctx) {
@@ -80,11 +109,43 @@
       playSound(sounds['brick']);
     }
   });
+  var Brick2 = new glitz.Renderable({
+    height: BPROPS.height,
+    width: BPROPS.width,
+    render: function(ctx) {
+      ctx.closePath();
+      ctx.beginPath();
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0,0, this.width, this.height);
+    },
+    sound: function () {
+      playSound(sounds['brick']);
+    }
+  });
+  var Brick3 = new glitz.Renderable({
+    height: BPROPS.height,
+    width: BPROPS.width,
+    render: function(ctx) {
+      ctx.closePath();
+      ctx.beginPath();
+      ctx.fillStyle = "#0F0";
+      ctx.fillRect(0,0, this.width, this.height);
+    },
+    sound: function () {
+      playSound(sounds['brick']);
+    }
+  });
+
+  var BrickTypes = [
+    Brick1,
+    Brick2,
+    Brick3,
+  ];
 
   var Ball = new glitz.Renderable({
     radius: 5,
-    dx: 3,
-    dy: -3,
+    dx: 4,
+    dy: -4,
     render: function (ctx) {
       ctx.closePath();
       ctx.beginPath();
@@ -160,20 +221,26 @@
         teardownScene(start_screen_objects);
         goal.remove();
         $(document).off('keydown');
-        play_screen();
+        play_screen(levels[currentLevel]);
       }
     });
   }
 
-  function play_screen() {
-    // FIXME: make a JSON object that can represent the layout of bricks for more than one level.
-    for (j = 0; j < 8; j++) {
-      for (i = 0; i < 6; i++) {
-        brick = new Brick({x:43 + (1 + BPROPS.width) * j, y:40 + (1 + BPROPS.height) * i});
-        bricks.push(brick)
-        game.push(brick);
+  function build_level(level) {
+    var num_rows, i;
+    for (num_rows=0; num_rows < level.length; num_rows++) {
+      for (i=0; i < level[num_rows].length; i++) {
+        if (level[num_rows][i] != 0) {
+          brick = new BrickTypes[level[num_rows][i]]({x:43 + (1 + BPROPS.width) * i, y: 40 + (1 + BPROPS.height) * num_rows});
+          bricks.push(brick);
+          game.push(brick);
+        }
       }
     }
+  }
+
+  function play_screen(level) {
+    build_level(level);
 
     ball = new Ball({x:game.width/2, y:game.height - 40});
     paddle = new Paddle({x:game.width/2 - PPROPS.width/2, y: game.height - 20});
@@ -209,7 +276,6 @@
 
   function game_over_screen() {
     var game_over = new Label({label:"game over", size: "50px", x:25, y:game.height/2});
-    console.log(game_over);
     setupScene([game_over]);
   }
 
@@ -275,7 +341,6 @@
     }
 
     // bottom of the game
-    // FIXME: Special case, reduce lives here
     if (ball.y + ball.radius >= ball.parent.height) {
       lives.data -= 1;
       if (lives.data == 0) {
@@ -331,6 +396,13 @@
       brick.sound();
       brick.remove();
       bricks.splice(i, 1);
+      if (bricks.length == 0) {
+        teardownScene(game_objects);
+        engine.unregisterAnimation();
+        engine.unregisterAnimation();
+        // FIXME: Teardown!
+        play_screen(levels[++currentLevel]);
+      }
     }
 
     // After the collision has or hasn't taken place
