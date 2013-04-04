@@ -26,7 +26,7 @@
     [1,0,1,0,1,0,1,1],
     [1,1,1,1,1,1,1,1]
   ];
-  var levels = [level0, level2];
+  var levels = [level2];
   var currentLevel = 0;
   // Sound setup
   var sounds = {
