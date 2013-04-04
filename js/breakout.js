@@ -114,25 +114,43 @@
   var bricks = [];
   var title;
   var start;
+  var instructions1, instructions2;
+  var goal;
 
   function start_screen() {
     title = new Label({label: "bricks", size: "80px", x: 35, y: game.height/4}); 
-    start = new Label({label: "push left or right arrow to start", size: "15px", x: 25, y: game.height/2});
-    instructions = new Label({
+    start = new Label({label: "press the space bar to play", size: "15px", x: 65, y: game.height/2});
+    goal = new Label({
       label: "Goal: Break all the bricks",
       size: "12px",
-      x: 110,
+      x: 100,
+      y: game.height/2 + 50
+    });
+    instructions1 = new Label({
+      label: "Press the left and right arrows",
+      size: "12px",
+      x: 75,
       y: game.height/2 + game.height/4
+    });
+    instructions2 = new Label({
+      label: "to move the paddle",
+      size: "12px",
+      x: 140,
+      y: instructions1.y + 20
     });
     game.push(title);
     game.push(start);
-    game.push(instructions);
+    game.push(instructions1);
+    game.push(instructions2);
+    game.push(goal);
     engine.loop(function () {});
     $(document).on('keydown', function(e) {
-      if (e.which == 37 || e.which == 39) {
+      if (e.which == 32) {
         title.remove();
         start.remove();
-        instructions.remove();
+        instructions1.remove();
+        instructions2.remove();
+        goal.remove();
         $(document).off('keydown');
         init();
       }
