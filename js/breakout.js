@@ -25,6 +25,19 @@
   engine.setSize($(window).width(), $(window).height()-5);
   engine.layout.backgroundColor = '#111';
 
+
+  function setupScene(objects) {
+    for (var i=0, len=objects.length; i < len; i++) {
+      game.push(objects[i]);
+    }
+  }
+
+  function teardownScene(objects) {
+    for (var i=0, len=objects.length; i < len; i++) {
+      objects[i].remove();
+    }
+  }
+
   // Models
   var Game = new glitz.Renderable({
     width: 500,
@@ -116,6 +129,7 @@
   var start;
   var instructions1, instructions2;
   var goal;
+  var start_screen_objects, game_objects;
 
   function start_screen() {
     title = new Label({label: "bricks", size: "80px", x: 35, y: game.height/4}); 
@@ -138,26 +152,20 @@
       x: 140,
       y: instructions1.y + 20
     });
-    game.push(title);
-    game.push(start);
-    game.push(instructions1);
-    game.push(instructions2);
-    game.push(goal);
+    start_screen_objects = [title, start, instructions1, instructions2, goal];
+    setupScene(start_screen_objects);
     engine.loop(function () {});
     $(document).on('keydown', function(e) {
       if (e.which == 32) {
-        title.remove();
-        start.remove();
-        instructions1.remove();
-        instructions2.remove();
+        teardownScene(start_screen_objects);
         goal.remove();
         $(document).off('keydown');
-        init();
+        play_screen();
       }
     });
   }
 
-  function init() {
+  function play_screen() {
     // FIXME: make a JSON object that can represent the layout of bricks for more than one level.
     for (j = 0; j < 8; j++) {
       for (i = 0; i < 6; i++) {
@@ -170,13 +178,14 @@
     ball = new Ball({x:game.width/2, y:game.height - 40});
     paddle = new Paddle({x:game.width/2 - PPROPS.width/2, y: game.height - 20});
     //var score = new Label({text: "score: ", x: 5, y: 15});
-    lives = new Label({label: "lives: ", x: 5, y: 15, data: "3"});
+    lives = new Label({label: "lives: ", x: 5, y: 15, data: 3});
 
-    game.push(ball);
-    game.push(paddle);
+    game_objects = [ball, paddle, lives];
+
+    setupScene(game_objects);
     //game.push(score);
-    game.push(lives);
 
+    // FIXME: set false on things like lose focus
     // Set the key listening functions
     // on each frame that paddle.<dir> is true, move the paddle <dir>
     $(document).keydown(function (e) {
@@ -198,6 +207,11 @@
     start_game();
   };
 
+  function game_over_screen() {
+    var game_over = new Label({label:"game over", size: "50px", x:25, y:game.height/2});
+    console.log(game_over);
+    setupScene([game_over]);
+  }
 
   // Rect must have the following properties:
   //     x, y, width, height
@@ -208,109 +222,126 @@
       && (x >= rect.x)
   };
 
+  function game_loop() {
+    if (paddle.left) {
+      if (paddle.x > 0) {
+        paddle.x -= 5;
+      }
+    }
+    if (paddle.right) {
+      if (paddle.x + paddle.width < paddle.parent.width) {
+        paddle.x += 5;
+      }
+    }
+
+    // Define points on the ball
+    var topx = ball.x;
+    var topy = ball.y - ball.radius;
+
+    var leftx =  ball.x - ball.radius;
+    var lefty =  ball.y;
+
+    var rightx = ball.x + ball.radius;
+    var righty = ball.y;
+
+    var bottomx = ball.x;
+    var bottomy = ball.y + ball.radius;
+
+    var paddle_collision = false
+    // ball collides with paddle?
+    if (point_rect_collision(bottomx, bottomy, paddle)) {
+      paddle_collision = true;
+      ball.dy = -ball.dy;
+    }
+    if (point_rect_collision(leftx, lefty, paddle) 
+        || point_rect_collision(rightx, righty, paddle)) {
+      paddle_collision = true;
+      ball.dx = -ball.dx;
+    }
+    if (paddle_collision) {
+      paddle.sound();
+    }
+      
+    // edge of game collision:
+    // left || right side of the game turn the ball around
+    if (ball.x - ball.radius  + ball.dx < 0 
+        || ball.x + ball.radius + ball.dx > ball.parent.width) {
+      ball.dx = -ball.dx;
+    }
+
+    // top of the game
+    if (ball.y - ball.radius + ball.dy <= 0) {
+      ball.dy = -ball.dy;
+    }
+
+    // bottom of the game
+    // FIXME: Special case, reduce lives here
+    if (ball.y + ball.radius >= ball.parent.height) {
+      lives.data -= 1;
+      if (lives.data == 0) {
+        teardownScene(game_objects.concat(bricks));
+        game_over_screen();
+        engine.unregisterAnimation();
+        engine.unregisterAnimation();
+      } else {
+        ball.x = game.width/2;
+        ball.y = game.height - 40;
+        ball.dx = 0;
+        ball.dy = 0;
+        paddle.x = game.width/2 - PPROPS.width/2;
+        paddle.y = game.height - 20;
+        window.setTimeout(function() {
+          ball.dx = 3;
+          ball.dy = -3;
+        }, 1000);
+      }
+    }
+
+    // brick collision
+    // For each brick
+    //  See if the top of the ball has collided
+    var collision = false;
+    for (i = 0; i < bricks.length; i ++) {
+      brick = bricks[i];
+      //  See if the left of the ball has collided
+      if (point_rect_collision(leftx, lefty, brick)) {
+        collision = true;
+        ball.dx = -ball.dx;
+        break;
+      }
+      //  See if the right of the ball has collided
+      if (point_rect_collision(rightx, righty, brick)) {
+        collision = true;
+        ball.dx = -ball.dx;
+        break;
+      }
+      if (point_rect_collision(topx, topy, brick)) {
+        collision = true;
+        ball.dy = -ball.dy;
+        break;
+      }
+      //  See if the bottom of the ball has colided
+      if (point_rect_collision(bottomx, bottomy, brick)) {
+        collision = true;
+        ball.dy = -ball.dy;
+        break;
+      }
+    }
+    if (collision) {
+      brick.sound();
+      brick.remove();
+      bricks.splice(i, 1);
+    }
+
+    // After the collision has or hasn't taken place
+    // Update the location of the ball.
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+  }
+
   // Main game loop
   function start_game() {
-    engine.loop( function() {
-
-      if (paddle.left) {
-        if (paddle.x > 0) {
-          paddle.x -= 5;
-        }
-      }
-      if (paddle.right) {
-        if (paddle.x + paddle.width < paddle.parent.width) {
-          paddle.x += 5;
-        }
-      }
-
-      // Define points on the ball
-      var topx = ball.x;
-      var topy = ball.y - ball.radius;
-
-      var leftx =  ball.x - ball.radius;
-      var lefty =  ball.y;
-
-      var rightx = ball.x + ball.radius;
-      var righty = ball.y;
-
-      var bottomx = ball.x;
-      var bottomy = ball.y + ball.radius;
-
-      var paddle_collision = false
-      // ball collides with paddle?
-      if (point_rect_collision(bottomx, bottomy, paddle)) {
-        paddle_collision = true;
-        ball.dy = -ball.dy;
-      }
-      if (point_rect_collision(leftx, lefty, paddle) 
-          || point_rect_collision(rightx, righty, paddle)) {
-        paddle_collision = true;
-        ball.dx = -ball.dx;
-      }
-      if (paddle_collision) {
-        paddle.sound();
-      }
-        
-      // edge of game collision:
-      // left || right side of the game turn the ball around
-      if (ball.x - ball.radius  + ball.dx < 0 
-          || ball.x + ball.radius + ball.dx > ball.parent.width) {
-        ball.dx = -ball.dx;
-      }
-
-      // top of the game
-      if (ball.y - ball.radius + ball.dy <= 0) {
-        ball.dy = -ball.dy;
-      }
-
-      // bottom of the game
-      // FIXME: Special case, reduce lives here
-      if (ball.y + ball.radius >= ball.parent.height) {
-        lives.data -= 1;
-        ball.dy = -ball.dy;
-      }
-
-      // brick collision
-      // For each brick
-      //  See if the top of the ball has collided
-      var collision = false;
-      for (i = 0; i < bricks.length; i ++) {
-        brick = bricks[i];
-        //  See if the left of the ball has collided
-        if (point_rect_collision(leftx, lefty, brick)) {
-          collision = true;
-          ball.dx = -ball.dx;
-          break;
-        }
-        //  See if the right of the ball has collided
-        if (point_rect_collision(rightx, righty, brick)) {
-          collision = true;
-          ball.dx = -ball.dx;
-          break;
-        }
-        if (point_rect_collision(topx, topy, brick)) {
-          collision = true;
-          ball.dy = -ball.dy;
-          break;
-        }
-        //  See if the bottom of the ball has colided
-        if (point_rect_collision(bottomx, bottomy, brick)) {
-          collision = true;
-          ball.dy = -ball.dy;
-          break;
-        }
-      }
-      if (collision) {
-        brick.sound();
-        brick.remove();
-        bricks.splice(i, 1);
-      }
-
-      // After the collision has or hasn't taken place
-      // Update the location of the ball.
-      ball.x += ball.dx;
-      ball.y += ball.dy;
-    });
+    engine.loop(game_loop);
   };
 
   start_screen();
