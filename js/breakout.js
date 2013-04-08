@@ -28,6 +28,13 @@
   ];
   var levels = [level2];
   var currentLevel = 0;
+
+  var BRICK_COLOR = [
+    "#f00",
+    "#000",
+    "#0f0"
+  ];
+
   // Sound setup
   var sounds = {
     brick: new Audio(["sounds/brick_hit.wav"]),
@@ -96,51 +103,27 @@
     }
   });
 
-  var Brick1 = new glitz.Renderable({
+  var Brick = new glitz.Renderable({
     height: BPROPS.height,
     width: BPROPS.width,
+    color: "#000",
     render: function(ctx) {
       ctx.closePath();
       ctx.beginPath();
-      ctx.fillStyle = "#F00";
+      ctx.fillStyle = this.color;
       ctx.fillRect(0,0, this.width, this.height);
     },
     sound: function () {
       playSound(sounds['brick']);
-    }
-  });
-  var Brick2 = new glitz.Renderable({
-    height: BPROPS.height,
-    width: BPROPS.width,
-    render: function(ctx) {
-      ctx.closePath();
-      ctx.beginPath();
-      ctx.fillStyle = "#000";
-      ctx.fillRect(0,0, this.width, this.height);
     },
-    sound: function () {
-      playSound(sounds['brick']);
+    collision: function (obj) {
+      var side = ball_rect_collision(obj, this);
+      if (side !== undefined) {
+        this.sound();
+        this.remove();
+      }
     }
   });
-  var Brick3 = new glitz.Renderable({
-    height: BPROPS.height,
-    width: BPROPS.width,
-    render: function(ctx) {
-      ctx.closePath();
-      ctx.beginPath();
-      ctx.fillStyle = "#0F0";
-      ctx.fillRect(0,0, this.width, this.height);
-    },
-    sound: function () {
-      playSound(sounds['brick']);
-    }
-  });
-
-  var BrickTypes = [
-    Brick1,
-    Brick2,
-    Brick3,
-  ];
 
   var Ball = new glitz.Renderable({
     max_speed: Math.sqrt(32),
@@ -233,8 +216,11 @@
     for (num_rows=0; num_rows < level.length; num_rows++) {
       for (i=0; i < level[num_rows].length; i++) {
         if (level[num_rows][i] != 0) {
-          brick = new BrickTypes[level[num_rows][i]]({x:43 + (1 + BPROPS.width) * i, y: 40 + (1 + BPROPS.height) * num_rows});
-          bricks.push(brick);
+          brick = new Brick({
+            color: BRICK_COLOR[level[num_rows][i]],
+            x: 43 + (1 + BPROPS.width) * i, 
+            y: 40 + (1 + BPROPS.height) * num_rows
+          });
           game.push(brick);
         }
       }
@@ -374,36 +360,10 @@
     // brick collision
     // For each brick
     //  See if the top of the ball has collided
-    var collision = false;
-    for (i = 0; i < bricks.length; i ++) {
-      brick = bricks[i];
-      //  See if the left of the ball has collided
-      if (point_rect_collision(leftx, lefty, brick)) {
-        collision = true;
-        ball.dx = -ball.dx;
-        ball.x += 1;
-        break;
-      }
-      //  See if the right of the ball has collided
-      if (point_rect_collision(rightx, righty, brick)) {
-        collision = true;
-        ball.dx = -ball.dx;
-        ball.x -= 1;
-        break;
-      }
-      if (point_rect_collision(topx, topy, brick)) {
-        collision = true;
-        ball.dy = -ball.dy;
-        ball.y += 1;
-        break;
-      }
-      //  See if the bottom of the ball has colided
-      if (point_rect_collision(bottomx, bottomy, brick)) {
-        collision = true;
-        ball.dy = -ball.dy;
-        ball.y -= 1;
-        break;
-      }
+    var bricks = engine.filter(Brick);
+    for (var i = 0; i < bricks.length; i ++) {
+      bricks[i].collision(ball);
+      ball.collision(bricks[i]);
     }
     if (collision) {
       brick.sound();
