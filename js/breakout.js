@@ -26,7 +26,7 @@
     [1,0,1,0,1,0,1,1],
     [1,1,1,1,1,1,1,1]
   ];
-  var levels = [level2];
+  var levels = [level0, level2];
   var currentLevel = 0;
 
   var BRICK_COLOR = [
@@ -265,16 +265,12 @@
   engine.push(game);
   var ball;
   var paddle;
-  var sound;
   var lives;
-  var i, j;
-  var brick;
-  var bricks = [];
   var title;
   var start;
   var instructions1, instructions2;
   var goal;
-  var start_screen_objects, game_objects;
+  var game_objects;
 
   function start_screen() {
     title = new Label({label: "bricks", size: "80px", x: 35, y: game.height/4}); 
@@ -297,7 +293,7 @@
       x: 140,
       y: instructions1.y + 20
     });
-    start_screen_objects = [title, start, instructions1, instructions2, goal];
+    var start_screen_objects = [title, start, instructions1, instructions2, goal];
     setupScene(start_screen_objects);
     engine.loop(function () {});
     $(document).on('keydown', function(e) {
