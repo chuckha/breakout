@@ -83,6 +83,15 @@
       ctx.beginPath();
       ctx.fillStyle = "#FFF";
       ctx.fillRect(0, 0, this.width, this.height);
+    },
+    getAllByType: function (type) {
+      var objects = [];
+      for (var i =0, len = this.length; i < len; i++) {
+        if (this[i]._type === type) {
+          objects.push(this[i]);
+        }
+      }
+      return objects;
     }
   });
 
@@ -137,6 +146,63 @@
       ctx.arc(0, 0, this.radius, 0, Math.PI*2, false);
       ctx.fill();
     },
+    collision: function (obj) {
+      // implies always colliding with
+      var side = ball_rect_collision(this, obj);
+      if (Brick.Array === obj.constructor || Wall.Array === obj.constructor){
+        if (side === "left") {
+          this.dx = -this.dx;
+          this.x -= 1;
+        } else if (side === "right") {
+          this.dx = -this.dx;
+          this.x += 1;
+        } else if (side === "top") {
+          this.dy = -this.dy;
+          this.y -= 1;
+        } else if (side === "bottom") {
+          this.dy = -this.dy;
+          this.y += 1;
+        }
+      } else if (Paddle.Array === obj.constructor) {
+          if (side === "left") {
+          this.dx = -this.dx;
+          this.x -= 1;
+        } else if (side === "right") {
+          this.dx = -this.dx;
+          this.x += 1;
+        } else if (side === "top") {
+          var midpoint_of_paddle = obj.x + (obj.width/2);
+          var distance_from_center = this.x + this.radius - midpoint_of_paddle;
+          var ratio_away_from_center = distance_from_center/(obj.width/2);
+          var new_x = 6 * ratio_away_from_center;
+          var new_y = Math.sqrt(Math.abs(this.max_speed * this.max_speed - new_x * new_x));
+          this.dy = -new_y;
+          this.dx = new_x;
+          this.y -= 1;
+        } else if (side === "bottom") {
+          this.dy = -this.dy;
+          this.y += 1;
+        }
+      }
+    },
+    outOfBounds: function () {
+      return this.y + this.radius >= this.parent.height;
+    },
+    tick: function () {
+      this.x += this.dx;
+      this.y += this.dy;
+    },
+    init: function () {
+      var self = this;
+      self.x = game.width/2;
+      self.y = game.height - 40;
+      self.dx = 0;
+      self.dy = 0;
+      window.setTimeout(function() {
+        self.dx = 4;
+        self.dy = -4;
+      }, 1000);
+    }
   });
 
   var PPROPS = {
@@ -155,9 +221,43 @@
       ctx.fillStyle = "#444";
       ctx.fillRect(0,0, this.width, this.height);
     },
+    init: function () {
+      this.x = game.width/2 - PPROPS.width/2;
+      this.y = game.height - 20;
+    },
     sound: function () {
       playSound(sounds['paddle']);
+    },
+    collision: function(obj) {
+      var side = ball_rect_collision(obj, this);
+      if (side !== undefined) {
+        if (Ball.Array === obj.constructor) {
+          this.sound();
+        } else if (Wall.Array === obj.constructor) {
+          if (side === "right") {
+            this.left = false; 
+          } else if (side === "left") {
+            this.right = false;
+          }
+        }
+      }
+    },
+    tick: function () {
+      if (this.left) {
+        if (this.x > 0) {
+          this.x -= 5;
+        }
+      }
+      if (this.right) {
+        if (this.x + this.width < this.parent.width) {
+          this.x += 5;
+        }
+      }
     }
+  });
+
+  var Wall = new glitz.Renderable({
+    render: function () {}
   });
 
   // Game instance setup
@@ -229,17 +329,16 @@
 
   lives = new Label({label: "lives: ", x: 5, y: 15, data: 3});
   function play_screen(level) {
-    console.log(engine);
     build_level(level);
 
-    ball = new Ball({x:game.width/2, y:game.height - 40});
-    paddle = new Paddle({x:game.width/2 - PPROPS.width/2, y: game.height - 20});
-    //var score = new Label({text: "score: ", x: 5, y: 15});
+    ball = new Ball();
+    paddle = new Paddle();
+    leftWall = new Wall({x: -20, y:0, width: 20, height:game.height});
+    rightWall = new Wall({x: game.width, y: 0, width: 20, height: game.height});
+    topWall = new Wall({x: 0, y: -20, width: game.width, height: 20});
 
-    game_objects = [ball, paddle, lives];
-
+    game_objects = [ball, paddle, lives, leftWall, rightWall, topWall];
     setupScene(game_objects);
-    //game.push(score);
 
     // FIXME: set false on things like lose focus
     // Set the key listening functions
@@ -274,22 +373,11 @@
     return (y <= rect.y + rect.height)
       && (y >= rect.y)
       && (x <= rect.x + rect.width)
-      && (x >= rect.x)
+      && (x >= rect.x);
   };
-
-  function game_loop() {
-    if (paddle.left) {
-      if (paddle.x > 0) {
-        paddle.x -= 5;
-      }
-    }
-    if (paddle.right) {
-      if (paddle.x + paddle.width < paddle.parent.width) {
-        paddle.x += 5;
-      }
-    }
-
-    // Define points on the ball
+// undefined for no collision
+// or the side that collided on
+  function ball_rect_collision(ball, rect) {
     var topx = ball.x;
     var topy = ball.y - ball.radius;
 
@@ -301,60 +389,44 @@
 
     var bottomx = ball.x;
     var bottomy = ball.y + ball.radius;
+    if (point_rect_collision(leftx, lefty, rect)) {
+      return "right";
+    } else if (point_rect_collision(rightx, righty, rect)) {
+      return "left";
+    } else if (point_rect_collision(topx, topy, rect)) {
+      return "bottom";
+    } else if (point_rect_collision(bottomx, bottomy, rect)) {
+      return "top";
+    }
+  }
 
-    var paddle_collision = false;
-    // ball collides with paddle?
-    if (point_rect_collision(bottomx, bottomy, paddle)) {
-      var midpoint_of_paddle = paddle.x + (paddle.width/2);
-      var distance_from_center = bottomx - midpoint_of_paddle;
-      var ratio_away_from_center = distance_from_center/(paddle.width/2);
-      var new_x = 6 * ratio_away_from_center;
-      var new_y = Math.sqrt(Math.abs(ball.max_speed * ball.max_speed - new_x * new_x));
-      paddle_collision = true;
-      ball.dy = -new_y;
-      ball.dx = new_x;
-      ball.y -= 1;
-    }
-    if (point_rect_collision(leftx, lefty, paddle) 
-        || point_rect_collision(rightx, righty, paddle)) {
-      paddle_collision = true;
-      ball.dx = -ball.dx;
-    }
-    if (paddle_collision) {
-      paddle.sound();
-    }
+  function game_loop() {
+    paddle.tick();
+
+    ball.collision(paddle);
+
+    paddle.collision(ball);
+
+    paddle.collision(leftWall);
+    paddle.collision(rightWall);
       
-    // edge of game collision:
-    // left || right side of the game turn the ball around
-    if (ball.x - ball.radius  + ball.dx < 0 
-        || ball.x + ball.radius + ball.dx > ball.parent.width) {
-      ball.dx = -ball.dx;
-    }
-
-    // top of the game
-    if (ball.y - ball.radius + ball.dy <= 0) {
-      ball.dy = -ball.dy;
-    }
-
     // bottom of the game
-    if (ball.y + ball.radius >= ball.parent.height) {
+    if (ball.outOfBounds()) {
       lives.data -= 1;
       if (lives.data == 0) {
-        teardownScene(game_objects.concat(bricks));
+        teardownScene(game_objects.concat(engine.filter(Brick)));
         game_over_screen();
         engine.unregisterAnimation();
       } else {
-        ball.x = game.width/2;
-        ball.y = game.height - 40;
-        ball.dx = 0;
-        ball.dy = 0;
-        paddle.x = game.width/2 - PPROPS.width/2;
-        paddle.y = game.height - 20;
-        window.setTimeout(function() {
-          ball.dx = 4;
-          ball.dy = -4;
-        }, 1000);
+        ball.init();
+        paddle.init();
       }
+    }
+
+    // ball and sides of game
+    var walls = engine.filter(Wall);
+    for (var i = 0; i < walls.length; i++) {
+      ball.collision(walls[i]);
     }
 
     // brick collision
@@ -365,22 +437,19 @@
       bricks[i].collision(ball);
       ball.collision(bricks[i]);
     }
-    if (collision) {
-      brick.sound();
-      brick.remove();
-      bricks.splice(i, 1);
-      if (bricks.length == 0) {
-        teardownScene(game_objects);
-        engine.unregisterAnimation();
-        // FIXME: Teardown!
+
+    bricks = engine.filter(Brick);
+    if (bricks.length == 0) {
+      teardownScene(game_objects);
+      engine.unregisterAnimation();
+      if (currentLevel === levels.length - 1) {
+        console.log("You win!")
+      } else {
         play_screen(levels[++currentLevel]);
       }
     }
 
-    // After the collision has or hasn't taken place
-    // Update the location of the ball.
-    ball.x += ball.dx;
-    ball.y += ball.dy;
+    ball.tick();
   }
 
   // Main game loop
