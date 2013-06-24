@@ -1,7 +1,9 @@
 (function() {
+  // A testing level
   var level0 = [
-    [0,0,0,0,0,0,1]
+    [0,0,0,0,0,1,0]
   ];
+  // A basic level
   var level1 = [
     [1,1,1,1,1,1,1,1],
     [1,1,1,1,1,1,1,1],
@@ -10,6 +12,7 @@
     [1,1,1,1,1,1,1,1],
     [1,1,1,1,1,1,1,1]
   ];
+  // The hacker school level!
   var level2 = [
     [1,1,1,1,1,1,1,1],
     [1,0,0,0,0,0,0,1],
@@ -26,7 +29,7 @@
     [1,0,1,0,1,0,1,1],
     [1,1,1,1,1,1,1,1]
   ];
-  var levels = [level2];
+  var levels = [level1, level2];
   var currentLevel = 0;
 
   var BRICK_COLOR = [
@@ -263,14 +266,14 @@
   // Game instance setup
   var game = new Game({x:300, y:10});
   engine.push(game);
-  var ball;
-  var paddle;
-  var lives;
-  var title;
-  var start;
-  var instructions1, instructions2;
-  var goal;
-  var game_objects;
+  var ball,
+      paddle,
+      lives,
+      title,
+      start,
+      instructions1, instructions2,
+      goal,
+      game_objects;
 
   function start_screen() {
     title = new Label({label: "bricks", size: "80px", x: 35, y: game.height/4}); 
