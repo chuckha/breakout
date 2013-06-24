@@ -136,7 +136,7 @@
       playSound(sounds['brick']);
     },
     collision: function (obj) {
-      var side = ball_rect_collision(obj, this);
+      var side = ballRectCollision(obj, this);
       if (side !== undefined) {
         this.sound();
         this.remove();
@@ -145,7 +145,7 @@
   });
 
   var Ball = new glitz.Renderable({
-    max_speed: Math.sqrt(32),
+    maxSpeed: Math.sqrt(32),
     radius: 5,
     dx: 4,
     dy: -4,
@@ -158,7 +158,7 @@
     },
     collision: function (obj) {
       // implies always colliding with
-      var side = ball_rect_collision(this, obj);
+      var side = ballRectCollision(this, obj);
       if (Brick.Array === obj.constructor || Wall.Array === obj.constructor){
         if (side === "left") {
           this.dx = -this.dx;
@@ -181,13 +181,13 @@
           this.dx = -this.dx;
           this.x += 1;
         } else if (side === "top") {
-          var midpoint_of_paddle = obj.x + (obj.width/2);
-          var distance_from_center = this.x + this.radius - midpoint_of_paddle;
-          var ratio_away_from_center = distance_from_center/(obj.width/2);
-          var new_x = 6 * ratio_away_from_center;
-          var new_y = Math.sqrt(Math.abs(this.max_speed * this.max_speed - new_x * new_x));
-          this.dy = -new_y;
-          this.dx = new_x;
+          var midpointOfPaddle = obj.x + (obj.width/2);
+          var distanceFromCenter = this.x + this.radius - midpointOfPaddle;
+          var ratioAwayFromCenter = distanceFromCenter/(obj.width/2);
+          var newX = 6 * ratioAwayFromCenter;
+          var newY = Math.sqrt(Math.abs(this.maxSpeed * this.maxSpeed - newX * newX));
+          this.dy = -newY;
+          this.dx = newX;
           this.y -= 1;
         } else if (side === "bottom") {
           this.dy = -this.dy;
@@ -234,7 +234,7 @@
       playSound(sounds['paddle']);
     },
     collision: function(obj) {
-      var side = ball_rect_collision(obj, this);
+      var side = ballRectCollision(obj, this);
       if (side !== undefined) {
         if (Ball.Array === obj.constructor) {
           this.sound();
@@ -275,9 +275,9 @@
       start,
       instructions1, instructions2,
       goal,
-      game_objects;
+      gameObjects;
 
-  function start_screen() {
+  function startScreen() {
     title = new Label({label: "bricks", size: "80px", x: 35, y: game.height/4}); 
     start = new Label({label: "press the space bar to play", size: "15px", x: 65, y: game.height/2});
     goal = new Label({
@@ -298,29 +298,29 @@
       x: 140,
       y: instructions1.y + 20
     });
-    var start_screen_objects = [title, start, instructions1, instructions2, goal];
-    setupScene(start_screen_objects);
+    var startScreenObjects = [title, start, instructions1, instructions2, goal];
+    setupScene(startScreenObjects);
     engine.loop(function () {});
     $(document).on('keydown', function(e) {
       if (e.which == 32) {
         engine.unregisterAnimation();
-        teardownScene(start_screen_objects);
+        teardownScene(startScreenObjects);
         goal.remove();
         $(document).off('keydown');
-        play_screen(levels[currentLevel]);
+        playScreen(levels[currentLevel]);
       }
     });
   }
 
-  function build_level(level) {
-    var num_rows, i;
-    for (num_rows=0; num_rows < level.length; num_rows++) {
-      for (i=0; i < level[num_rows].length; i++) {
-        if (level[num_rows][i] != 0) {
+  function buildLevel(level) {
+    var numRows, i;
+    for (numRows=0; numRows < level.length; numRows++) {
+      for (i=0; i < level[numRows].length; i++) {
+        if (level[numRows][i] != 0) {
           brick = new Brick({
-            color: BRICK_COLOR[level[num_rows][i]],
+            color: BRICKCOLOR[level[numRows][i]],
             x: 43 + (1 + BPROPS.width) * i, 
-            y: 40 + (1 + BPROPS.height) * num_rows
+            y: 40 + (1 + BPROPS.height) * numRows
           });
           game.push(brick);
         }
@@ -329,8 +329,8 @@
   }
 
   lives = new Label({label: "lives: ", x: 5, y: 15, data: 3});
-  function play_screen(level) {
-    build_level(level);
+  function playScreen(level) {
+    buildLevel(level);
 
     ball = new Ball();
     paddle = new Paddle();
@@ -338,8 +338,8 @@
     rightWall = new Wall({x: game.width, y: 0, width: 20, height: game.height});
     topWall = new Wall({x: 0, y: -20, width: game.width, height: 20});
 
-    game_objects = [ball, paddle, lives, leftWall, rightWall, topWall];
-    setupScene(game_objects);
+    gameObjects = [ball, paddle, lives, leftWall, rightWall, topWall];
+    setupScene(gameObjects);
 
     // FIXME: set false on things like lose focus
     // Set the key listening functions
@@ -360,17 +360,22 @@
         paddle.left = false;
       }
     });
-    start_game();
+    startGame();
   };
 
-  function game_over_screen() {
-    var game_over = new Label({label:"game over", size: "50px", x:25, y:game.height/2});
-    setupScene([game_over]);
+  function gameOverScreen() {
+    var gameOver = new Label({label: "game over", size: "50px", x: 25, y: game.height/2});
+    setupScene([gameOver]);
+  }
+
+  function winScreen() {
+    var win = new Label({label: "Congratulations", size: "31px", x: 25, y: game.height/4});
+    setupScene([win]);
   }
 
   // Rect must have the following properties:
   //     x, y, width, height
-  function point_rect_collision(x, y, rect) {
+  function pointRectCollision(x, y, rect) {
     return (y <= rect.y + rect.height)
       && (y >= rect.y)
       && (x <= rect.x + rect.width)
@@ -378,7 +383,7 @@
   };
 // undefined for no collision
 // or the side that collided on
-  function ball_rect_collision(ball, rect) {
+  function ballRectCollision(ball, rect) {
     var topx = ball.x;
     var topy = ball.y - ball.radius;
 
@@ -390,24 +395,22 @@
 
     var bottomx = ball.x;
     var bottomy = ball.y + ball.radius;
-    if (point_rect_collision(leftx, lefty, rect)) {
+    if (pointRectCollision(leftx, lefty, rect)) {
       return "right";
-    } else if (point_rect_collision(rightx, righty, rect)) {
+    } else if (pointRectCollision(rightx, righty, rect)) {
       return "left";
-    } else if (point_rect_collision(topx, topy, rect)) {
+    } else if (pointRectCollision(topx, topy, rect)) {
       return "bottom";
-    } else if (point_rect_collision(bottomx, bottomy, rect)) {
+    } else if (pointRectCollision(bottomx, bottomy, rect)) {
       return "top";
     }
   }
 
-  function game_loop() {
+  function gameLoop() {
     paddle.tick();
 
     ball.collision(paddle);
-
     paddle.collision(ball);
-
     paddle.collision(leftWall);
     paddle.collision(rightWall);
       
@@ -415,8 +418,8 @@
     if (ball.outOfBounds()) {
       lives.data -= 1;
       if (lives.data == 0) {
-        teardownScene(game_objects.concat(engine.filter(Brick)));
-        game_over_screen();
+        teardownScene(gameObjects.concat(engine.filter(Brick)));
+        gameOverScreen();
         engine.unregisterAnimation();
       } else {
         ball.init();
@@ -440,13 +443,13 @@
     }
 
     bricks = engine.filter(Brick);
-    if (bricks.length == 0) {
-      teardownScene(game_objects);
+    if (bricks.length == 0 && lives.data > 0) {
+      teardownScene(gameObjects);
       engine.unregisterAnimation();
       if (currentLevel === levels.length - 1) {
-        console.log("You win!")
+        winScreen();
       } else {
-        play_screen(levels[++currentLevel]);
+        playScreen(levels[++currentLevel]);
       }
     }
 
@@ -454,9 +457,9 @@
   }
 
   // Main game loop
-  function start_game() {
-    engine.loop(game_loop);
+  function startGame() {
+    engine.loop(gameLoop);
   };
 
-  start_screen();
+  startScreen();
 })();
