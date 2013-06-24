@@ -32,11 +32,23 @@
   var levels = [level1, level2];
   var currentLevel = 0;
 
-  var BRICK_COLOR = [
+  var BRICKCOLOR = [
     "#f00",
     "#000",
     "#0f0"
   ];
+
+  // Brick properties
+  var BPROPS = {
+    height: 15,
+    width: 50,
+  };
+
+  // Paddle properties
+  var PPROPS = {
+    width: 80,
+    height: 10
+  };
 
   // Sound setup
   var sounds = {
@@ -97,11 +109,6 @@
       return objects;
     }
   });
-
-  var BPROPS = {
-    height: 15,
-    width: 50,
-  };
 
   var Label = new glitz.Renderable({
     label: "",
@@ -207,11 +214,6 @@
       }, 1000);
     }
   });
-
-  var PPROPS = {
-    width: 80,
-    height: 10
-  };
 
   var Paddle = new glitz.Renderable({
     left: false,
